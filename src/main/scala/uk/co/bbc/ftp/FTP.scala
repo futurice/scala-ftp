@@ -7,6 +7,8 @@ import java.io.{File, FileOutputStream, InputStream}
 
 final class FTP(client: FTPClient) {
 
+	val BINARY_FILE_TYPE = FTP.BINARY_FILE_TYPE
+
 	def login(username: String, password: String): Try[Boolean] = Try {
 		client.login(username, password)
 	}
@@ -16,11 +18,9 @@ final class FTP(client: FTPClient) {
 		client.enterLocalPassiveMode()
 	}
 
-	def connected: Boolean =
-		client.isConnected
+	def connected: Boolean = client.isConnected
 
-	def disconnect(): Unit =
-		client.disconnect()
+	def disconnect(): Unit = client.disconnect()
 
 	/**
 	 * Utility method for testing a connection that disconnects automatically
@@ -42,25 +42,22 @@ final class FTP(client: FTPClient) {
 	 * Make a connection to a given host and try to login
 	 */
 	def connectWithAuth(host: String, username: String = "anonymous", password: String = ""): Try[Boolean] = {
-
-		for {connection <- connect(host)
-			 login <- login(username, password)} yield login
+		for {
+			connection <- connect(host)
+			login <- login(username, password)
+		} yield login
 	}
 
-	def extractNames(f: Option[String] => Array[FTPFile]) =
-		f(None).map(_.getName).toSeq
+	def extractNames(f: Option[String] => Array[FTPFile]) = f(None).map(_.getName).toSeq
 
-	def cd(path: String): Boolean =
-		client.changeWorkingDirectory(path)
+	def cd(path: String): Boolean = client.changeWorkingDirectory(path)
 
 	/**
 	 * Return a sequence of files in the current directory
 	 */
-	def filesInCurrentDirectory: Seq[String] =
-		extractNames(listFiles)
+	def filesInCurrentDirectory: Seq[String] = extractNames(listFiles)
 
 	def downloadFileStream(remote: String): InputStream = {
-
 		val stream = client.retrieveFileStream(remote)
 		client.completePendingCommand() // make sure it actually completes!!
 		stream
@@ -70,7 +67,6 @@ final class FTP(client: FTPClient) {
 	 * Download a single file i.e downloadFile("data.csv")
 	 */
 	def downloadFile(remote: String): Boolean = {
-
 		val os = new FileOutputStream(new File(remote))
 		client.retrieveFile(remote, os)
 	}
@@ -78,16 +74,17 @@ final class FTP(client: FTPClient) {
 	/**
 	 * Upload a single file
 	 */
-	def uploadFile(remote: String, input: InputStream): Boolean = {
-		client.storeFile(remote, input)
-	}
+	def uploadFile(remote: String, input: InputStream): Boolean = client.storeFile(remote, input)
 
 	/**
 	 * Given a file name read the file content as a string
 	 */
-	def streamAsString(stream: InputStream): String = {
+	def streamAsString(stream: InputStream): String = fromInputStream(stream).getLines().mkString("\n")
 
-		fromInputStream(stream).getLines().mkString("\n")
-	}
+	def setFileType(fileType: Int): Unit = client.setFileType(fileType)
+
+	def setFileTransferMode(mode: Int): Unit = client.setFileTransferMode(mode)
+
+	def enterLocalPassiveMode(): Unit = client.enterLocalPassiveMode()
 
 }

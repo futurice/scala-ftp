@@ -60,9 +60,6 @@ final class FTP(client: FTPClient) {
     client.retrieveFile(remote, os)
   }
 
-  def streamAsString(stream: InputStream): String = {
-    fromInputStream(stream)
-      .getLines()
-      .mkString("\n")
-  }
+  def streamAsString(stream: InputStream): String =
+    fromInputStream(stream).getLines().mkString("\n")
 }

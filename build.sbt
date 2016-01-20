@@ -2,7 +2,7 @@ name := "scala-ftp"
 
 version := "1.0"
 
-scalaVersion := "2.11.1"
+scalaVersion := "2.11.7"
 
 libraryDependencies ++= Seq(
     "commons-net"   % "commons-net"    % "3.3"

@@ -6,7 +6,6 @@ import scala.io.Source.fromInputStream
 import java.io.{File, FileOutputStream, InputStream}
 
 final class FTP(client: FTPClient) {
-
   def login(username: String, password: String): Try[Boolean] = Try {
     client.login(username, password)
   }
@@ -61,5 +60,5 @@ final class FTP(client: FTPClient) {
   }
 
   def streamAsString(stream: InputStream): String =
-    fromInputStream(stream).getLines().mkString("\n")
+    fromInputStream(stream).mkString
 }

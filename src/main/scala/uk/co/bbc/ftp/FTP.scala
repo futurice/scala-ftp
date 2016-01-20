@@ -16,15 +16,9 @@ final class FTP(client: FTPClient) {
     client.enterLocalPassiveMode()
   }
 
-  def connected: Boolean =
-    client.isConnected
+  def connected: Boolean = client.isConnected
+  def disconnect(): Unit = client.disconnect()
 
-  def disconnect(): Unit =
-    client.disconnect()
-
-  /**
-   * Utility method for testing a connection that disconnects automatically
-   */
   def canConnect(host: String): Boolean = {
     client.connect(host)
     val connectionWasEstablished = connected
@@ -37,9 +31,6 @@ final class FTP(client: FTPClient) {
     case None    => client.listFiles
   }
 
-  /**
-   * Make a connection to a given host and try to login
-   */
   def connectWithAuth(host: String,
                       username: String = "anonymous",
                       password: String = "") : Try[Boolean] = {
@@ -55,9 +46,6 @@ final class FTP(client: FTPClient) {
   def cd(path: String): Boolean =
     client.changeWorkingDirectory(path)
 
-  /**
-   * Return a sequence of files in the current directory
-   */
   def filesInCurrentDirectory: Seq[String] =
     extractNames(listFiles)
 
@@ -67,17 +55,11 @@ final class FTP(client: FTPClient) {
     stream
   }
 
-  /**
-   * Download a single file i.e downloadFile("data.csv")
-   */
   def downloadFile(remote: String): Boolean = {
     val os = new FileOutputStream(new File(remote))
     client.retrieveFile(remote, os)
   }
 
-  /**
-   * Given a file name read the file content as a string
-   */
   def streamAsString(stream: InputStream): String = {
     fromInputStream(stream)
       .getLines()

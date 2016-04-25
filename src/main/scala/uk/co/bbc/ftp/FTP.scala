@@ -6,85 +6,59 @@ import scala.io.Source.fromInputStream
 import java.io.{File, FileOutputStream, InputStream}
 
 final class FTP(client: FTPClient) {
+  def login(username: String, password: String): Try[Boolean] = Try {
+    client.login(username, password)
+  }
 
-	val BINARY_FILE_TYPE = FTP.BINARY_FILE_TYPE
+  def connect(host: String): Try[Unit] = Try {
+    client.connect(host)
+    client.enterLocalPassiveMode()
+  }
 
-	def login(username: String, password: String): Try[Boolean] = Try {
-		client.login(username, password)
-	}
+  def connected: Boolean = client.isConnected
+  def disconnect(): Unit = client.disconnect()
 
-	def connect(host: String): Try[Unit] = Try {
-		client.connect(host)
-		client.enterLocalPassiveMode()
-	}
+  def canConnect(host: String): Boolean = {
+    client.connect(host)
+    val connectionWasEstablished = connected
+    client.disconnect()
+    connectionWasEstablished
+  }
 
-	def connected: Boolean = client.isConnected
+  def listFiles(dir: Option[String]): Array[FTPFile] = dir match {
+    case Some(d) => client.listFiles(d)
+    case None    => client.listFiles
+  }
 
-	def disconnect(): Unit = client.disconnect()
+  def connectWithAuth(host: String,
+                      username: String = "anonymous",
+                      password: String = "") : Try[Boolean] = {
+    for {
+      connection <- connect(host)
+      login      <- login(username, password)
+    } yield login
+  }
 
-	/**
-	 * Utility method for testing a connection that disconnects automatically
-	 */
-	def canConnect(host: String): Boolean = {
+  def extractNames(f: Option[String] => Array[FTPFile]) =
+    f(None).map(_.getName).toSeq
 
-		client.connect(host)
-		val connectionWasEstablished = connected
-		client.disconnect()
-		connectionWasEstablished
-	}
+  def cd(path: String): Boolean =
+    client.changeWorkingDirectory(path)
 
-	def listFiles(dir: Option[String]): Array[FTPFile] = dir match {
-		case Some(d) => client.listFiles(d)
-		case None => client.listFiles
-	}
+  def filesInCurrentDirectory: Seq[String] =
+    extractNames(listFiles)
 
-	/**
-	 * Make a connection to a given host and try to login
-	 */
-	def connectWithAuth(host: String, username: String = "anonymous", password: String = ""): Try[Boolean] = {
-		for {
-			connection <- connect(host)
-			login <- login(username, password)
-		} yield login
-	}
+  def downloadFileStream(remote: String): InputStream = {
+    val stream = client.retrieveFileStream(remote)
+    client.completePendingCommand() // make sure it actually completes!!
+    stream
+  }
 
-	def extractNames(f: Option[String] => Array[FTPFile]) = f(None).map(_.getName).toSeq
+  def downloadFile(remote: String): Boolean = {
+    val os = new FileOutputStream(new File(remote))
+    client.retrieveFile(remote, os)
+  }
 
-	def cd(path: String): Boolean = client.changeWorkingDirectory(path)
-
-	/**
-	 * Return a sequence of files in the current directory
-	 */
-	def filesInCurrentDirectory: Seq[String] = extractNames(listFiles)
-
-	def downloadFileStream(remote: String): InputStream = {
-		val stream = client.retrieveFileStream(remote)
-		client.completePendingCommand() // make sure it actually completes!!
-		stream
-	}
-
-	/**
-	 * Download a single file i.e downloadFile("data.csv")
-	 */
-	def downloadFile(remote: String): Boolean = {
-		val os = new FileOutputStream(new File(remote))
-		client.retrieveFile(remote, os)
-	}
-
-	/**
-	 * Upload a single file
-	 */
-	def uploadFile(remote: String, input: InputStream): Boolean = client.storeFile(remote, input)
-
-	/**
-	 * Given a file name read the file content as a string
-	 */
-	def streamAsString(stream: InputStream): String = fromInputStream(stream).getLines().mkString("\n")
-
-	def setFileType(fileType: Int): Unit = client.setFileType(fileType)
-
-	def setFileTransferMode(mode: Int): Unit = client.setFileTransferMode(mode)
-
-	def enterLocalPassiveMode(): Unit = client.enterLocalPassiveMode()
-
+  def streamAsString(stream: InputStream): String =
+    fromInputStream(stream).mkString
 }

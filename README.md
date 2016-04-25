@@ -19,6 +19,16 @@ object E {
 			client.downloadFile("README")
 		}
 
+		client.disconnect()
+
+	}
+
+	def uploadFileExample() : Unit = {
+
+		client.connectWithAuth("ftp.mozilla.org", "anonymous", "")
+
+		client.cd("pub")
+
 		//Upload file
 		if (client.filesInCurrentDirectory.contains("README")) {
 			val fileStream: InputStream = ftp.downloadFileStream("README")

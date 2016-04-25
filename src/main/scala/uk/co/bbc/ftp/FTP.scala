@@ -61,4 +61,7 @@ final class FTP(client: FTPClient) {
 
   def streamAsString(stream: InputStream): String =
     fromInputStream(stream).mkString
+
+  def uploadFile(remote: String, input: InputStream): Boolean = client.storeFile(remote, input)
+
 }

@@ -64,8 +64,7 @@ final class FTP(client: FTPClient) {
 
   def uploadFile(remote: String, input: InputStream): Boolean = client.storeFile(remote, input)
 
-  def getModificationTime(pathName: String): Double =
-    client.getModificationTime(pathName: String).toDouble
+  def getModificationTime(pathName: String): Double = client.getModificationTime(pathName).toDouble
 
   def rename(from: String, to: String): Boolean =
     client.rename(from, to)
